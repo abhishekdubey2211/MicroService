@@ -221,7 +221,138 @@ No manual configuration required.
     %d{yyyy-MM-dd HH:mm:ss} [%X{traceId:-}] [%X{spanId:-}] %-5level %logger{36} - %msg%n
 </pattern>
 ```
+Example  For using (SLF4J + Log4j2) exclude default logback config from all starter dependencies 
+```xml
+<dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-tomcat</artifactId>
+      <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
+      <scope>provided</scope>
+    </dependency>
 
+<!--  Log4j2 (includes log4j-core + slf4j bridge automatically)  -->
+  <dependency>
+     <groupId>org.springframework.boot</groupId>
+     <artifactId>spring-boot-starter-log4j2</artifactId>
+ </dependency>
+
+```
+📍 Location --> src/main/resources/log4j2-spring.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+
+    <!-- ================================================= -->
+    <!--                 CONFIGURATION PROPERTIES          -->
+    <!-- ================================================= -->
+    <Properties>
+        <Property name="LOG_FILE_NAME">${spring:log.file.name:-application}</Property>
+        <Property name="APP_NAME">${spring:spring.application.name:-APP}-${spring:server.port}</Property>
+        <Property name="ROTATION_INTERVAL">${spring:log.rotation.interval:-1}</Property>
+        <Property name="LOG_RETENTION_DAYS">${spring:log.retention.days:-7}</Property>
+        <Property name="LOG_FILE_PATH">${spring:log.file.path:-./logs}</Property>
+        <Property name="ROOT_LOG_LEVEL">${spring:log.root.level:-INFO}</Property>
+        <Property name="FILE_SIZE">${spring:log.file.size:-100MB}</Property>
+
+        <!-- ✅ Centralized log pattern (single source of truth) -->
+        <Property name="LOG_PATTERN">
+            %d{yyyy-MM-dd HH:mm:ss.SSS} %-5p [%t] [${APP_NAME}]
+            [%X{traceId:-}] [%X{spanId:-}]
+            %notEmpty{[%X{correlationId}]}
+            %c{2}%notEmpty{.%M}%notEmpty{ [%L]} -- %m%n
+        </Property>
+    </Properties>
+
+    <!-- ================================================= -->
+    <!--                    APPENDERS                     -->
+    <!-- ================================================= -->
+    <Appenders>
+
+        <!-- ================================================= -->
+        <!-- MAIN ROLLING FILE APPENDER -->
+        <!-- ================================================= -->
+        <RollingFile name="RollingFileAppender"
+                     fileName="${LOG_FILE_PATH}/${LOG_FILE_NAME}-live.log"
+                     filePattern="${LOG_FILE_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd-HH}.log.gz">
+
+            <PatternLayout charset="UTF-8" pattern="${LOG_PATTERN}"/>
+
+            <!-- Time + size based rotation -->
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="${ROTATION_INTERVAL}" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${FILE_SIZE}"/>
+            </Policies>
+
+            <!-- Retention policy -->
+            <DefaultRolloverStrategy>
+                <Delete basePath="${LOG_FILE_PATH}" maxDepth="1">
+                    <IfFileName glob="${LOG_FILE_NAME}-*.log.gz"/>
+                    <IfLastModified age="${LOG_RETENTION_DAYS}d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+
+        <!-- ================================================= -->
+        <!-- ERROR LOG FILE -->
+        <!-- ================================================= -->
+        <RollingFile name="ErrorFile"
+                     fileName="${LOG_FILE_PATH}/error.log"
+                     filePattern="${LOG_FILE_PATH}/error-%d{yyyy-MM-dd}.log.gz">
+
+            <PatternLayout charset="UTF-8" pattern="${LOG_PATTERN}"/>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="24" modulate="true"/>
+            </Policies>
+
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+
+        <!-- ================================================= -->
+        <!-- CONSOLE OUTPUT -->
+        <!-- ================================================= -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout charset="UTF-8" pattern="${LOG_PATTERN}"/>
+        </Console>
+
+    </Appenders>
+
+    <!-- ================================================= -->
+    <!--                    LOGGERS                        -->
+    <!-- ================================================= -->
+    <Loggers>
+
+        <!-- Spring Framework -->
+        <Logger name="org.springframework" level="INFO"/>
+        <Logger name="org.springframework.web" level="INFO"/>
+
+        <!-- Hibernate / JPA -->
+        <Logger name="org.hibernate" level="WARN"/>
+
+        <!-- Feign -->
+        <Logger name="feign" level="INFO"/>
+
+        <!-- Application Root -->
+        <!-- AsyncRoot used for non-blocking logging -->
+        <AsyncRoot level="${ROOT_LOG_LEVEL}">
+            <AppenderRef ref="RollingFileAppender"/>
+            <AppenderRef ref="ErrorFile"/>
+            <AppenderRef ref="Console"/>
+        </AsyncRoot>
+
+    </Loggers>
+
+</Configuration>
+</Configuration>
+
+```
 📌 This allows you to **correlate logs with traces**.
 
 ---
