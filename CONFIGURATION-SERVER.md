@@ -290,7 +290,7 @@ spring:
     name: user-service
 
   config:
-    import: optional:configserver:
+    import:optional:configserver:http://localhost:9095
   cloud:
     config:
       discovery:
@@ -308,6 +308,20 @@ management:
       exposure:
         include: health,info
 ```
+OR
+Update application.properties (Microservice)
+
+```properties
+spring.application.name=user-service
+
+spring.config.import=optional:configserver:http://localhost:9095
+spring.cloud.config.discovery.enabled=true
+spring.cloud.config.discovery.service-id=config-server
+
+eureka.client.service-url.defaultZone=http://localhost:9092/eureka/
+```
+📌 Microservices now discover Config Server via Eureka.
+
 
 📌 **Key Advantage**
 Microservices **discover the Config Server dynamically via Eureka**, allowing:
