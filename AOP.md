@@ -66,6 +66,14 @@ AOP solves this by **modularizing** these concerns.
 
 ### Simple Example (Spring AOP)
 
+
+Required Maven Dependency (pom.xml)
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+```
 #### Business Logic
 
 ```java
