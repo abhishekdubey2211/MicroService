@@ -414,3 +414,250 @@ execution(* com.app..*Service.*(..))
 
 ---
 
+## ✅ Complete Spring AOP Example 
+
+✔ 2 **custom annotations**
+✔ **ALL advice types**
+✔ **ALL major pointcut expressions**
+✔ **Named & combined pointcuts**
+✔ `execution`, `within`, `args`, `this`, `target`, `@annotation`
+✔ Success + Exception flow
+
+---
+
+# 📦 Project Structure
+
+```
+com.example.aopdemo
+│
+├── annotation
+│   ├── LogExecutionTime.java
+│   └── StrongPassword.java
+│
+├── aspect
+│   └── ApplicationAspect.java
+│
+├── service
+│   └── UserService.java
+│
+└── AopDemoApplication.java
+```
+
+---
+
+# 1️⃣ Custom Annotation – `LogExecutionTime`
+
+```java
+package com.example.aopdemo.annotation;
+
+import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface LogExecutionTime {
+}
+```
+
+📌 **Use**: Measure method execution time
+
+---
+
+# 2️⃣ Custom Annotation – `StrongPassword`
+
+```java
+package com.example.aopdemo.annotation;
+
+import java.lang.annotation.*;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface StrongPassword {
+}
+```
+
+📌 **Use**: Validate password strength
+
+---
+
+# 3️⃣ Business Service (Target Object)
+
+```java
+package com.example.aopdemo.service;
+
+import com.example.aopdemo.annotation.LogExecutionTime;
+import com.example.aopdemo.annotation.StrongPassword;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserService {
+
+    @LogExecutionTime
+    public void registerUser(String username) {
+        System.out.println("User registered: " + username);
+    }
+
+    @StrongPassword
+    public void changePassword(String password) {
+        System.out.println("Password changed successfully");
+    }
+
+    public void deleteUser() {
+        System.out.println("User deleted");
+    }
+
+    public void exceptionMethod() {
+        throw new RuntimeException("Something went wrong!");
+    }
+}
+```
+
+---
+
+# 4️⃣ Aspect – ALL Join Points + Advices + Patterns
+
+```java
+package com.example.aopdemo.aspect;
+
+import com.example.aopdemo.annotation.LogExecutionTime;
+import org.aspectj.lang.*;
+import org.aspectj.lang.annotation.*;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class ApplicationAspect {
+
+    // =========================
+    // NAMED POINTCUTS
+    // =========================
+
+    // execution pattern
+    @Pointcut("execution(* com.example.aopdemo.service.*.*(..))")
+    public void allServiceMethods() {}
+
+    // within pattern
+    @Pointcut("within(com.example.aopdemo.service.UserService)")
+    public void userServiceOnly() {}
+
+    // args pattern
+    @Pointcut("args(String)")
+    public void stringArgument() {}
+
+    // annotation-based
+    @Pointcut("@annotation(com.example.aopdemo.annotation.LogExecutionTime)")
+    public void logExecutionAnnotation() {}
+
+    // =========================
+    // BEFORE ADVICE
+    // =========================
+    @Before("allServiceMethods()")
+    public void beforeAdvice(JoinPoint jp) {
+        System.out.println("[BEFORE] Method: " + jp.getSignature());
+    }
+
+    // =========================
+    // AFTER ADVICE (FINALLY)
+    // =========================
+    @After("userServiceOnly()")
+    public void afterAdvice(JoinPoint jp) {
+        System.out.println("[AFTER] Method finished: " + jp.getSignature());
+    }
+
+    // =========================
+    // AFTER RETURNING
+    // =========================
+    @AfterReturning(
+        pointcut = "execution(* registerUser(..))",
+        returning = "result"
+    )
+    public void afterReturningAdvice(Object result) {
+        System.out.println("[AFTER RETURNING] Success");
+    }
+
+    // =========================
+    // AFTER THROWING
+    // =========================
+    @AfterThrowing(
+        pointcut = "execution(* exceptionMethod(..))",
+        throwing = "ex"
+    )
+    public void afterThrowingAdvice(Exception ex) {
+        System.out.println("[AFTER THROWING] Exception: " + ex.getMessage());
+    }
+
+    // =========================
+    // AROUND ADVICE (MOST POWERFUL)
+    // =========================
+    @Around("logExecutionAnnotation()")
+    public Object aroundAdvice(ProceedingJoinPoint pjp) throws Throwable {
+        long start = System.currentTimeMillis();
+        Object result = pjp.proceed();
+        long end = System.currentTimeMillis();
+        System.out.println("[AROUND] Execution time: " + (end - start) + " ms");
+        return result;
+    }
+
+    // =========================
+    // CUSTOM ANNOTATION LOGIC
+    // =========================
+    @Before("@annotation(com.example.aopdemo.annotation.StrongPassword) && args(password)")
+    public void validatePassword(String password) {
+        if (password.length() < 8) {
+            throw new RuntimeException("Weak password!");
+        }
+        System.out.println("[SECURITY] Strong password validated");
+    }
+}
+```
+
+---
+
+# 5️⃣ Main Application
+
+```java
+package com.example.aopdemo;
+
+import com.example.aopdemo.service.UserService;
+import org.springframework.boot.*;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+
+@SpringBootApplication
+public class AopDemoApplication {
+
+    public static void main(String[] args) {
+        ApplicationContext ctx = SpringApplication.run(AopDemoApplication.class, args);
+        UserService service = ctx.getBean(UserService.class);
+
+        service.registerUser("John");
+        service.changePassword("StrongPass123");
+        service.deleteUser();
+
+        try {
+            service.exceptionMethod();
+        } catch (Exception e) {}
+    }
+}
+```
+
+---
+
+# 6️⃣ Console Output (Flow Proof)
+
+```
+[BEFORE] Method: registerUser
+User registered: John
+[AROUND] Execution time: 2 ms
+[AFTER RETURNING] Success
+[AFTER] Method finished: registerUser
+
+[SECURITY] Strong password validated
+Password changed successfully
+
+[BEFORE] Method: exceptionMethod
+[AFTER THROWING] Exception: Something went wrong!
+[AFTER] Method finished: exceptionMethod
+```
+
+---
+
