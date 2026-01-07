@@ -521,10 +521,17 @@ public class UserService {
         System.out.println("User registered: " + username);
     }
 
-    @StrongPassword
+    @StrongPassword(
+    minLength = 10,
+    maxLength = 20,
+    isSequenceAllowed = false,
+    isDuplicateAllowed = false,
+    allowedSpecialChars = "@#$_"
+   )
     public void changePassword(String password) {
-        System.out.println("Password changed successfully");
-    }
+         System.out.println("Password changed successfully");
+}
+
 
     public void deleteUser() {
         System.out.println("User deleted");
