@@ -445,6 +445,14 @@ com.example.aopdemo
 
 ---
 
+Required Maven Dependency (pom.xml)
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-aop</artifactId>
+</dependency>
+```
+
 # 1️⃣ Custom Annotation – `LogExecutionTime`
 
 ```java
