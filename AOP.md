@@ -480,6 +480,23 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface StrongPassword {
+
+    // Length rules
+    int minLength() default 8;
+    int maxLength() default 64;
+
+    // Pattern rules
+    boolean isSequenceAllowed() default false;
+    boolean isDuplicateAllowed() default true;
+
+    // Character rules
+    boolean mustHaveUppercase() default true;
+    boolean mustHaveLowercase() default true;
+    boolean mustHaveDigit() default true;
+    boolean mustHaveSpecialChar() default true;
+
+     //Allowed special characters only. Example: "!@#$%^&*"
+    String allowedSpecialChars() default "!@#$%^&*()_+-=[]{}|;:',.<>?";
 }
 ```
 
@@ -606,15 +623,69 @@ public class ApplicationAspect {
     }
 
     // =========================
-    // CUSTOM ANNOTATION LOGIC
+    // NAMED POINTCUT
     // =========================
-    @Before("@annotation(com.example.aopdemo.annotation.StrongPassword) && args(password)")
-    public void validatePassword(String password) {
-        if (password.length() < 8) {
-            throw new RuntimeException("Weak password!");
+    @Pointcut("@annotation(com.example.aopdemo.annotation.StrongPassword)")
+    public void strongPasswordMethod() {}
+
+    // =========================
+    // BEFORE ADVICE
+    // =========================
+    @Before("strongPasswordMethod() && args(password,..)")
+    public void validatePassword(JoinPoint joinPoint, String password) {
+
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+
+        StrongPassword annotation = method.getAnnotation(StrongPassword.class);
+
+        if (password == null) {
+            throw new WeakPasswordException("Password cannot be null");
         }
-        System.out.println("[SECURITY] Strong password validated");
+
+        // Rule checks
+        if (password.length() < annotation.minLength()) {
+            throw new WeakPasswordException(
+                "Password must be at least " + annotation.minLength() + " characters long"
+            );
+        }
+
+        if (annotation.mustHaveUppercase() && !password.matches(".*[A-Z].*")) {
+            throw new WeakPasswordException("Password must contain an uppercase letter");
+        }
+
+        if (annotation.mustHaveLowercase() && !password.matches(".*[a-z].*")) {
+            throw new WeakPasswordException("Password must contain a lowercase letter");
+        }
+
+        if (annotation.mustHaveDigit() && !password.matches(".*\\d.*")) {
+            throw new WeakPasswordException("Password must contain a digit");
+        }
+
+        if (annotation.mustHaveSpecialChar() &&
+            !password.matches(".*[!@#$%^&*()].*")) {
+            throw new WeakPasswordException("Password must contain a special character");
+        }
+
+        System.out.println("[SECURITY] Strong password validated for method: "
+                + signature.getMethod().getName());
     }
+
+   private boolean containsSequence(String password) {
+    String lower = password.toLowerCase();
+
+    for (int i = 0; i < lower.length() - 2; i++) {
+        char c1 = lower.charAt(i);
+        char c2 = lower.charAt(i + 1);
+        char c3 = lower.charAt(i + 2);
+
+        if (c2 == c1 + 1 && c3 == c2 + 1) {
+            return true; // abc, 123
+        }
+    }
+    return false;
+  }
+
 }
 ```
 
