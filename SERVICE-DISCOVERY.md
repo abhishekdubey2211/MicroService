@@ -71,42 +71,40 @@ Service discovery resolves the actual instance at runtime.
 ### 3.1 Maven Configuration (pom.xml)
 
 ```xml
-<properties>
-    <java.version>21</java.version>
-    <spring-cloud.version>2024.0.0</spring-cloud.version>
-</properties>
+	<properties>
+		<java.version>21</java.version>
+		<spring-cloud.version>2025.1.0</spring-cloud.version>
+	</properties>
+	<dependencies>
+		<!-- Web Layer -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
 
-<dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-dependencies</artifactId>
-            <version>${spring-cloud.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
-</dependencyManagement>
+		<!-- Eureka Server -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+		</dependency>
 
-<dependencies>
-    <!-- Eureka Server -->
-    <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
-    </dependency>
-
-    <!-- Web Layer -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <!-- Observability -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-</dependencies>
+		<!-- Observability -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 ```
 
 ---
@@ -116,10 +114,10 @@ Service discovery resolves the actual instance at runtime.
 ```yaml
 spring:
   application:
-    name: service-registry
+    name: DISCOVERY-SERVICE
 
 server:
-  port: 9092
+  port: 8081
 
 eureka:
   instance:
@@ -136,15 +134,16 @@ management:
     web:
       exposure:
         include: health,info
+
 ```
 OR
 ### 3.2 Create src/main/resources/application.properties:
 ```properties
 # Application name
-spring.application.name=service-registry
+spring.application.name=DISCOVERY-SERVICE
 
 # Eureka Server port
-server.port=9092
+server.port=8081
 
 # Eureka instance hostname
 eureka.instance.hostname=localhost
@@ -305,3 +304,4 @@ USER-SERVICE (1 instance)
 * Eureka inside Kubernetes clusters
 
 ---
+
