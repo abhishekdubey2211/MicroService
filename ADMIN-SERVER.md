@@ -84,45 +84,60 @@ admin-server
 ### ✅ Correct & Updated Dependencies
 
 ```xml
-<properties>
-    <java.version>21</java.version>
-    <spring-boot-admin.version>3.2.3</spring-boot-admin.version>
-</properties>
+	<properties>
+		<java.version>21</java.version>
+		<spring-boot-admin.version>3.5.6</spring-boot-admin.version>
+		<spring-cloud.version>2025.0.1</spring-cloud.version>
+	</properties>
+	<dependencies>
+		<!-- Actuator -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 
-<dependencies>
+		<!-- Web -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
 
-    <!-- Spring Boot Admin Server -->
-    <dependency>
-        <groupId>de.codecentric</groupId>
-        <artifactId>spring-boot-admin-starter-server</artifactId>
-        <version>${spring-boot-admin.version}</version>
-    </dependency>
+		<!-- Spring Boot Admin Server -->
+		<dependency>
+			<groupId>de.codecentric</groupId>
+			<artifactId>spring-boot-admin-starter-server</artifactId>
+		</dependency>
 
-    <!-- Eureka Client -->
-    <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-    </dependency>
+		<!-- Eureka Client -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+		</dependency>
 
-    <!-- Web -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-    <!-- Security (Recommended) -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-security</artifactId>
-    </dependency>
-
-    <!-- Actuator -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-actuator</artifactId>
-    </dependency>
-
-</dependencies>
+		<!-- Security (Recommended) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+	</dependencies>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>de.codecentric</groupId>
+				<artifactId>spring-boot-admin-dependencies</artifactId>
+				<version>${spring-boot-admin.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement></dependencies>
 ```
 
 📌 **Important**
@@ -137,21 +152,22 @@ admin-server
 ### 7.1 Main Application Class (CORRECT)
 
 ```java
-package com.example.adminserver;
+package com.jodo.service.admin;
 
+import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import de.codecentric.boot.admin.server.config.EnableAdminServer;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
 @EnableAdminServer
 @EnableDiscoveryClient
-public class AdminServerApplication {
+public class AdminServiceApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(AdminServerApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(AdminServiceApplication.class, args);
+	}
+
 }
 ```
 
@@ -162,17 +178,18 @@ public class AdminServerApplication {
 ### 8.1 application.yml (Recommended)
 
 ```yaml
-server:
-  port: 9099
 
 spring:
   application:
-    name: admin-server
+    name: ADMIN-SERVICE
+
+server:
+  port: 8082
 
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:9092/eureka/
+      defaultZone: http://localhost:8081/eureka/
     register-with-eureka: true
     fetch-registry: true
 
@@ -180,6 +197,7 @@ management:
   endpoints:
     web:
       exposure:
+        include: health,info
         include: "*"
 ```
 
@@ -192,7 +210,7 @@ management:
 Start the Admin Server and open:
 
 ```
-http://localhost:9099
+http://localhost:8082
 ```
 
 You will see:
